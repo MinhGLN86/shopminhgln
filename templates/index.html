@@ -1,0 +1,483 @@
+{% extends "base.html" %}
+
+{% block title %}ShopMinhGLN — Trang chủ{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HERO BANNER
+═══════════════════════════════════════════════════════════════ -->
+<section class="bg-gradient-to-br from-indigo-700 via-indigo-800 to-purple-900 text-white py-16 md:py-24 relative overflow-hidden">
+  <!-- Trang trí nền -->
+  <div class="absolute -right-16 -top-16 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute -left-16 -bottom-16 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+  <div class="max-w-7xl mx-auto px-4 text-center relative z-10">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-yellow-300 text-xs md:text-sm font-semibold mb-6 shadow-sm">
+      <i class="fas fa-fire"></i> Hệ thống tự động 24/7 — Giao dịch uy tín & an toàn
+    </div>
+
+    <h1 class="text-4xl md:text-6xl font-extrabold mb-4 leading-tight tracking-tight">
+      Chào Mừng Đến Với <span class="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-amber-200 to-yellow-400">ShopMinhGLN</span>
+    </h1>
+    <p class="text-indigo-200 text-base md:text-xl mb-8 max-w-2xl mx-auto leading-relaxed">
+      Chuyên cung cấp tài khoản game chính chủ, giá rẻ, chất lượng cao. Nạp tiền quét mã VietQR tự động tích tắc và nhận hàng ngay lập tức.
+    </p>
+
+    <!-- Các nút thao tác nhanh -->
+    <div class="flex flex-wrap items-center justify-center gap-3 md:gap-4">
+      <a href="#products"
+         class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold
+                px-7 py-3.5 rounded-xl transition shadow-lg hover:shadow-yellow-400/30 text-base flex items-center gap-2">
+        <i class="fas fa-shopping-bag"></i> Mua Ngay
+      </a>
+      <a href="{{ url_for('deposit') }}"
+         class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold
+                px-6 py-3.5 rounded-xl border border-indigo-400/30 transition shadow text-base flex items-center gap-2">
+        <i class="fas fa-qrcode text-yellow-300"></i> Nạp Tiền QR
+      </a>
+      <a href="#support"
+         class="bg-white/10 hover:bg-white/20 text-white font-medium
+                px-5 py-3.5 rounded-xl border border-white/20 transition text-base flex items-center gap-2">
+        <i class="fas fa-headset text-indigo-300"></i> Hỗ Trợ
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-4 md:gap-8 mt-12 max-w-2xl mx-auto border-t border-white/10 pt-8">
+      <div class="text-center">
+        <div class="text-2xl md:text-4xl font-extrabold text-yellow-300">100%</div>
+        <div class="text-indigo-200 text-xs md:text-sm mt-1">Tự động 24/7</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl md:text-4xl font-extrabold text-yellow-300">5.000+</div>
+        <div class="text-indigo-200 text-xs md:text-sm mt-1">Giao dịch thành công</div>
+      </div>
+      <div class="text-center">
+        <div class="text-2xl md:text-4xl font-extrabold text-yellow-300">1 Đổi 1</div>
+        <div class="text-indigo-200 text-xs md:text-sm mt-1">Bảo hành uy tín</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BỘ LỌC & DANH SÁCH SẢN PHẨM
+═══════════════════════════════════════════════════════════════ -->
+<section class="max-w-7xl mx-auto px-4 py-12" id="products">
+  <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+    <div>
+      <div class="inline-flex items-center gap-1.5 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-1">
+        <i class="fas fa-gamepad"></i> Cửa Hàng Trực Tuyến
+      </div>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-gray-800 flex items-center gap-2.5">
+        <span>Sản Phẩm & Tài Khoản</span>
+        <span class="text-sm font-medium text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">({{ products|length }})</span>
+      </h2>
+    </div>
+
+    {% if query %}
+    <div class="text-sm text-gray-600">
+      Đang tìm kiếm: <span class="font-bold text-indigo-600">"{{ query }}"</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Form bộ lọc -->
+  <form action="{{ url_for('index') }}#products" method="GET" id="filter-form"
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+
+      <!-- Tìm kiếm theo tên -->
+      <div class="lg:col-span-2">
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          <i class="fas fa-search mr-1 text-indigo-400"></i>Tìm theo tên sản phẩm
+        </label>
+        <input type="text" name="q"
+               value="{{ query or '' }}"
+               placeholder="Ví dụ: Free Fire, Mail7day, Gmail..."
+               class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+      </div>
+
+      <!-- Giá tối thiểu -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          <i class="fas fa-tag mr-1 text-indigo-400"></i>Giá từ (đ)
+        </label>
+        <input type="number" name="min_price"
+               value="{{ min_price|int if min_price else '' }}"
+               placeholder="0"
+               min="0"
+               class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
+                      focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+      </div>
+
+      <!-- Giá tối đa -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          <i class="fas fa-tag mr-1 text-indigo-400"></i>Đến (đ)
+        </label>
+        <div class="flex gap-2">
+          <input type="number" name="max_price"
+                 value="{{ max_price|int if max_price else '' }}"
+                 placeholder="Không giới hạn"
+                 min="0"
+                 class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-sm
+                        focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+          <button type="submit"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5
+                         rounded-lg transition text-sm font-semibold whitespace-nowrap shadow-sm">
+            <i class="fas fa-filter mr-1"></i>Lọc
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {% if query or min_price or max_price %}
+    <div class="mt-3">
+      <a href="{{ url_for('index') }}#products"
+         class="text-sm text-gray-500 hover:text-red-500 transition flex items-center gap-1 w-fit">
+        <i class="fas fa-times-circle"></i> Xóa bộ lọc
+      </a>
+    </div>
+    {% endif %}
+  </form>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       LƯỚI SẢN PHẨM
+  ═══════════════════════════════════════════════════════════════ -->
+  {% if products %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {% for product in products %}
+      <div class="product-card bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm flex flex-col">
+
+        <!-- Ảnh sản phẩm -->
+        <div class="relative overflow-hidden h-52 bg-gray-100">
+          <img src="{{ product.image_url }}"
+               alt="{{ product.name }}"
+               class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+               loading="lazy"
+               onerror="this.src='https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&h=400&fit=crop'" />
+
+          <!-- Badge hết hàng / còn ít hàng -->
+          {% if product.stock == 0 %}
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center">
+            <span class="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow flex items-center gap-1.5">
+              <i class="fas fa-exclamation-triangle"></i> Hết hàng
+            </span>
+          </div>
+          {% elif product.stock <= 5 %}
+          <div class="absolute top-2.5 left-2.5">
+            <span class="bg-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
+              Chỉ còn {{ product.stock }}
+            </span>
+          </div>
+          {% else %}
+          <div class="absolute top-2.5 left-2.5">
+            <span class="bg-green-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1">
+              <i class="fas fa-check-circle"></i> Còn {{ product.stock }}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Thông tin sản phẩm -->
+        <div class="p-5 flex flex-col flex-1">
+          <h3 class="font-bold text-gray-800 text-base leading-snug mb-1.5 line-clamp-2 hover:text-indigo-600 transition">
+            {{ product.name }}
+          </h3>
+          <p class="text-gray-500 text-xs leading-relaxed mb-4 line-clamp-2 flex-1">
+            {{ product.description }}
+          </p>
+
+          <!-- Giá + Thêm vào giỏ -->
+          <div class="flex items-center justify-between mt-auto pt-3 border-t border-gray-50">
+            <div>
+              <span class="text-xs text-gray-400 block">Giá bán:</span>
+              <span class="text-indigo-600 font-extrabold text-lg">
+                {{ format_vnd(product.price) }}
+              </span>
+            </div>
+
+            {% if product.stock > 0 %}
+            <button
+              onclick="addToCart({{ product.id }}, `{{ product.name|e }}`, {{ product.price|int }}, `{{ product.image_url }}`)"
+              class="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white
+                     text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm
+                     flex items-center gap-1.5">
+              <i class="fas fa-cart-plus"></i>
+              Mua
+            </button>
+            {% else %}
+            <button disabled
+                    class="bg-gray-100 text-gray-400 text-xs font-semibold px-3 py-2.5
+                           rounded-xl cursor-not-allowed flex items-center gap-1.5">
+              <i class="fas fa-ban"></i> Tạm hết
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <!-- Không có kết quả -->
+    <div class="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+      <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-gray-400">
+        <i class="fas fa-search text-2xl"></i>
+      </div>
+      <h3 class="text-lg font-bold text-gray-700 mb-1">Không tìm thấy sản phẩm</h3>
+      <p class="text-gray-400 text-sm mb-6">Thử tìm với từ khóa khác hoặc xóa bộ lọc để xem toàn bộ danh sách.</p>
+      <a href="{{ url_for('index') }}#products"
+         class="inline-flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl
+                font-semibold hover:bg-indigo-700 transition text-sm">
+        <i class="fas fa-redo"></i> Xem tất cả sản phẩm
+      </a>
+    </div>
+  {% endif %}
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION: HỖ TRỢ & HƯỚNG DẪN MUA HÀNG (#support)
+═══════════════════════════════════════════════════════════════ -->
+<section class="bg-gray-100/70 py-16" id="support">
+  <div class="max-w-7xl mx-auto px-4">
+    <!-- Tiêu đề mục Hỗ Trợ -->
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <div class="inline-flex items-center gap-1.5 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-2">
+        <i class="fas fa-headset"></i> Trung Tâm Hỗ Trợ
+      </div>
+      <h2 class="text-3xl font-extrabold text-gray-800">
+        Hỗ Trợ Khách Hàng <span class="text-indigo-600">24/7</span>
+      </h2>
+      <p class="text-gray-500 text-sm mt-2">
+        Mọi thắc mắc của bạn về quy trình nạp tiền, nhận tài khoản và bảo hành đều được giải đáp nhanh chóng tại ShopMinhGLN.
+      </p>
+    </div>
+
+    <!-- Quy trình 4 bước mua hàng -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-14">
+      <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 font-extrabold flex items-center justify-center mb-4">
+          1
+        </div>
+        <h4 class="font-bold text-gray-800 mb-1 text-base">Đăng Ký Tài Khoản</h4>
+        <p class="text-xs text-gray-500 leading-relaxed">
+          Tạo tài khoản thành viên chỉ trong 10 giây để quản lý số dư và đơn hàng đã mua.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative">
+        <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 font-extrabold flex items-center justify-center mb-4">
+          2
+        </div>
+        <h4 class="font-bold text-gray-800 mb-1 text-base">Nạp Tiền VietQR</h4>
+        <p class="text-xs text-gray-500 leading-relaxed">
+          Quét mã QR Techcombank nhận tiền tự động 100%, số dư được cộng ngay sau khi chuyển.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative">
+        <div class="w-10 h-10 rounded-xl bg-yellow-50 text-yellow-600 font-extrabold flex items-center justify-center mb-4">
+          3
+        </div>
+        <h4 class="font-bold text-gray-800 mb-1 text-base">Chọn Mua Sản Phẩm</h4>
+        <p class="text-xs text-gray-500 leading-relaxed">
+          Thêm tài khoản hoặc vật phẩm mong muốn vào giỏ và thanh toán bằng số dư đã nạp.
+        </p>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative">
+        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 font-extrabold flex items-center justify-center mb-4">
+          4
+        </div>
+        <h4 class="font-bold text-gray-800 mb-1 text-base">Nhận Hàng & Bảo Hành</h4>
+        <p class="text-xs text-gray-500 leading-relaxed">
+          Đơn hàng hoàn tất tức thì, xem chi tiết trong mục Đơn hàng. Đổi mới 1-1 nếu lỗi.
+        </p>
+      </div>
+    </div>
+
+    <!-- FAQ Accordion -->
+    <div class="max-w-3xl mx-auto space-y-3">
+      <h3 class="font-bold text-gray-800 text-lg mb-4 flex items-center gap-2">
+        <i class="fas fa-question-circle text-indigo-500"></i> Câu Hỏi Thường Gặp
+      </h3>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <h5 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+          <i class="fas fa-check text-green-500 text-xs"></i>
+          Nạp tiền vào tài khoản mất bao lâu để nhận được?
+        </h5>
+        <p class="text-xs text-gray-500 mt-2 pl-5 leading-relaxed">
+          Hệ thống tích hợp VietQR tự động xử lý ngay lập tức khi ngân hàng báo có tiền (thông thường chỉ mất 30 giây đến 1 phút). Quý khách nhớ điền đúng mã nội dung chuyển khoản được hiển thị.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <h5 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+          <i class="fas fa-check text-green-500 text-xs"></i>
+          Chính sách bảo hành tài khoản game như thế nào?
+        </h5>
+        <p class="text-xs text-gray-500 mt-2 pl-5 leading-relaxed">
+          Tất cả tài khoản bán ra tại ShopMinhGLN đều có cam kết đúng thông tin mô tả. Nếu sai pass hoặc lỗi trong thời hạn quy định, khách hàng được đổi tài khoản tương đương hoặc hoàn tiền 100%.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <h5 class="font-bold text-gray-800 text-sm flex items-center gap-2">
+          <i class="fas fa-check text-green-500 text-xs"></i>
+          Nếu chuyển tiền sai nội dung thì cần xử lý ra sao?
+        </h5>
+        <p class="text-xs text-gray-500 mt-2 pl-5 leading-relaxed">
+          Đừng lo lắng! Hãy chụp lại biên lai chuyển khoản và liên hệ ngay với Hotline / Zalo của ShopMinhGLN (0888.880.804) để được admin cộng tiền thủ công trong 5 phút.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION: LIÊN HỆ (#contact)
+═══════════════════════════════════════════════════════════════ -->
+<section class="max-w-7xl mx-auto px-4 py-16" id="contact">
+  <div class="text-center max-w-2xl mx-auto mb-12">
+    <div class="inline-flex items-center gap-1.5 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-2">
+      <i class="fas fa-phone-alt"></i> Kết Nối Với Chúng Tôi
+    </div>
+    <h2 class="text-3xl font-extrabold text-gray-800">
+      Liên Hệ <span class="text-indigo-600">ShopMinhGLN</span>
+    </h2>
+    <p class="text-gray-500 text-sm mt-2">
+      Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn mọi lúc qua các kênh trực tuyến dưới đây.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Cột thông tin liên lạc -->
+    <div class="space-y-4">
+      <!-- Card Zalo / Hotline -->
+      <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-6 rounded-2xl shadow-md flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl flex-shrink-0">
+          <i class="fas fa-phone-alt"></i>
+        </div>
+        <div>
+          <span class="text-xs text-indigo-100 font-semibold uppercase tracking-wider block">Hotline & Zalo CSKH</span>
+          <a href="tel:0888880804" class="text-xl font-extrabold hover:underline">0888.880.804</a>
+          <p class="text-xs text-indigo-100 mt-0.5">Hỗ trợ 24/7 mọi ngày trong tuần</p>
+        </div>
+      </div>
+
+      <!-- Card Facebook -->
+      <div class="bg-gradient-to-br from-blue-600 to-blue-700 text-white p-6 rounded-2xl shadow-md flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-2xl flex-shrink-0">
+          <i class="fab fa-facebook-messenger"></i>
+        </div>
+        <div>
+          <span class="text-xs text-blue-100 font-semibold uppercase tracking-wider block">Fanpage Facebook</span>
+          <span class="text-lg font-bold block">ShopMinhGLN Gaming</span>
+          <p class="text-xs text-blue-100 mt-0.5">Phản hồi tin nhắn trong vòng 5 phút</p>
+        </div>
+      </div>
+
+      <!-- Card Email -->
+      <div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl flex-shrink-0">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div>
+          <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider block">Hòm Thư Điện Tử</span>
+          <span class="text-base font-bold text-gray-800">support@shopminhgln.vn</span>
+          <p class="text-xs text-gray-500 mt-0.5">Giải đáp hợp tác & khiếu nại</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form gửi tin nhắn liên hệ nhanh -->
+    <div class="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+      <h3 class="text-xl font-bold text-gray-800 mb-2">Gửi Yêu Cầu Hỗ Trợ Trực Tuyến</h3>
+      <p class="text-xs text-gray-500 mb-6">Điền thông tin vào mẫu dưới đây, chúng tôi sẽ phản hồi lại bạn qua Zalo hoặc Số điện thoại sớm nhất.</p>
+
+      <form id="contact-form" onsubmit="handleContactSubmit(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Họ và tên của bạn</label>
+            <input type="text" id="contact-name" required placeholder="Ví dụ: Nguyễn Văn A"
+                   class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Số điện thoại / Zalo</label>
+            <input type="tel" id="contact-phone" required placeholder="Ví dụ: 0912345678"
+                   class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nội dung cần hỗ trợ</label>
+          <textarea id="contact-message" required rows="4" placeholder="Nhập câu hỏi hoặc mã đơn hàng cần hỗ trợ..."
+                    class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <button type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-6 py-3 rounded-xl transition shadow flex items-center gap-2 text-sm">
+          <i class="fas fa-paper-plane"></i> Gửi Yêu Cầu Ngay
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SECTION: ƯU ĐIỂM DỊCH VỤ
+═══════════════════════════════════════════════════════════════ -->
+<section class="bg-indigo-50 py-14 mt-8">
+  <div class="max-w-7xl mx-auto px-4">
+    <h2 class="text-2xl font-bold text-center text-gray-800 mb-10">
+      Tại sao chọn <span class="text-indigo-600">ShopMinhGLN</span>?
+    </h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {% for item in [
+        ('fa-shield-alt', 'text-blue-500',   'Bảo mật cao',        'Mọi giao dịch và thông tin tài khoản được bảo vệ tuyệt đối an toàn.'),
+        ('fa-bolt',       'text-yellow-500', 'Thanh toán tức thì', 'Nạp tiền VietQR tự động chỉ từ 30 giây, thanh toán siêu tốc.'),
+        ('fa-gift',       'text-green-500',  'Giá tốt cạnh tranh', 'Cam kết giá rẻ nhất thị trường với chất lượng tài khoản cao nhất.'),
+        ('fa-headset',    'text-purple-500', 'Hỗ trợ 24/7',        'Đội ngũ chăm sóc khách hàng nhiệt tình, xử lý mọi yêu cầu trong 5 phút.'),
+      ] %}
+      <div class="bg-white rounded-2xl p-6 text-center shadow-sm border border-gray-100 hover:shadow-md transition">
+        <div class="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas {{ item[0] }} {{ item[1] }} text-2xl"></i>
+        </div>
+        <h3 class="font-bold text-gray-800 mb-2">{{ item[2] }}</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">{{ item[3] }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function handleContactSubmit(e) {
+  e.preventDefault();
+  const name = document.getElementById('contact-name').value.trim();
+  const phone = document.getElementById('contact-phone').value.trim();
+  const message = document.getElementById('contact-message').value.trim();
+
+  if (!name || !phone || !message) {
+    showToast('Vui lòng điền đầy đủ các thông tin.', 'warning');
+    return;
+  }
+
+  showToast('Cảm ơn bạn! Yêu cầu hỗ trợ đã được gửi thành công.', 'success');
+  document.getElementById('contact-form').reset();
+}
+</script>
+{% endblock %}

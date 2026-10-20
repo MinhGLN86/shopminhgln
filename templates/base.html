@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}ShopMinhGLN — Mua sắm uy tín{% endblock %}</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <script>
+    // Cấu hình màu tùy chỉnh cho Tailwind
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: '#6366f1', dark: '#4f46e5' },
+            accent:  { DEFAULT: '#f59e0b', dark: '#d97706' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    /* Smooth transition cho badge giỏ hàng */
+    .cart-badge { transition: transform 0.2s ease; }
+    .cart-badge:hover { transform: scale(1.1); }
+    /* Hiệu ứng mờ khi hover card */
+    .product-card { transition: box-shadow 0.25s ease, transform 0.25s ease; }
+    .product-card:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.12); transform: translateY(-4px); }
+    /* Toast notification */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      z-index: 9999; transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    #toast.hidden { opacity: 0; transform: translateY(20px); pointer-events: none; }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  </style>
+
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       NAVBAR
+  ═══════════════════════════════════════════════════════════════ -->
+  <nav class="bg-indigo-600 shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+
+        <!-- Logo -->
+        <a href="{{ url_for('index') }}" class="flex items-center gap-2.5 text-white font-extrabold text-xl tracking-tight hover:opacity-95 transition">
+          <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shadow-inner">
+            <i class="fas fa-gamepad text-yellow-300 text-lg"></i>
+          </div>
+          <span>Shop<span class="text-yellow-300">MinhGLN</span></span>
+        </a>
+
+        <!-- Menu điều hướng chính (Desktop) -->
+        <div class="hidden lg:flex items-center gap-1 xl:gap-2">
+          <a href="{{ url_for('index') }}"
+             class="text-white/90 hover:text-white hover:bg-white/10 px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1.5">
+            <i class="fas fa-home text-xs opacity-80"></i>
+            Trang chủ
+          </a>
+          <a href="{{ url_for('index') }}#products"
+             class="text-white/90 hover:text-white hover:bg-white/10 px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1.5">
+            <i class="fas fa-box-open text-xs opacity-80"></i>
+            Sản Phẩm
+          </a>
+          <a href="{{ url_for('index') }}#support"
+             class="text-white/90 hover:text-white hover:bg-white/10 px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1.5">
+            <i class="fas fa-headset text-xs opacity-80"></i>
+            Hỗ Trợ
+          </a>
+          <a href="{{ url_for('index') }}#contact"
+             class="text-white/90 hover:text-white hover:bg-white/10 px-3.5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1.5">
+            <i class="fas fa-phone-alt text-xs opacity-80"></i>
+            Liên Hệ
+          </a>
+        </div>
+
+        <!-- Thanh tìm kiếm nhanh (Desktop) -->
+        <form action="{{ url_for('index') }}" method="GET"
+              class="hidden md:flex flex-1 max-w-xs lg:max-w-sm mx-4">
+          <div class="relative w-full">
+            <input type="text" name="q"
+                   value="{{ query or '' }}"
+                   placeholder="Tìm sản phẩm..."
+                   class="w-full pl-3.5 pr-9 py-1.5 rounded-lg text-gray-900 text-sm
+                          focus:outline-none focus:ring-2 focus:ring-white bg-white/95" />
+            <button type="submit"
+                    class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600">
+              <i class="fas fa-search text-xs"></i>
+            </button>
+          </div>
+        </form>
+
+        <!-- Nhóm nút bên phải -->
+        <div class="flex items-center gap-2 sm:gap-3">
+
+          {% if current_user %}
+            {% if current_user.is_admin %}
+            <!-- Nút Quản Trị Admin -->
+            <a href="{{ url_for('admin_dashboard') }}"
+               class="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600
+                      text-white text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 rounded-lg transition shadow-sm font-semibold"
+               title="Trang quản trị Shop">
+              <i class="fas fa-shield-alt text-amber-200"></i>
+              <span class="hidden md:inline">Quản Trị</span>
+            </a>
+            {% endif %}
+
+            <!-- Số dư tài khoản -->
+            <a href="{{ url_for('deposit') }}"
+               class="flex items-center gap-1.5 bg-indigo-500 hover:bg-indigo-400
+                      text-white text-xs sm:text-sm px-2.5 sm:px-3 py-1.5 rounded-lg transition shadow-sm"
+               title="Bấm để nạp tiền">
+              <i class="fas fa-wallet text-yellow-300"></i>
+              <span id="navbar-balance" class="font-bold">{{ format_vnd(current_user.balance) }}</span>
+            </a>
+
+            <!-- Dropdown user -->
+            <div class="relative group">
+              <button class="flex items-center gap-2 text-white hover:opacity-80 transition py-1">
+                <div class="w-8 h-8 rounded-full bg-indigo-400 border border-white/30 flex items-center justify-center font-bold text-sm shadow-sm">
+                  {{ current_user.username[0].upper() }}
+                </div>
+                <span class="hidden sm:inline text-sm font-medium">{{ current_user.username }}</span>
+                <i class="fas fa-chevron-down text-xs opacity-80"></i>
+              </button>
+
+              <!-- Dropdown menu -->
+              <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl py-2
+                          opacity-0 invisible group-hover:opacity-100 group-hover:visible
+                          transition-all duration-200 border border-gray-100 z-50">
+                <div class="px-4 py-2 border-b border-gray-100 text-xs text-gray-500">
+                  Tài khoản: <strong class="text-gray-800">{{ current_user.username }}</strong>
+                </div>
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin_dashboard') }}"
+                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-amber-600 font-bold hover:bg-amber-50 border-b border-amber-50">
+                  <i class="fas fa-shield-alt w-4 text-amber-500"></i> Quản Trị Shop
+                </a>
+                {% endif %}
+                <a href="{{ url_for('orders') }}"
+                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+                  <i class="fas fa-receipt w-4"></i> Đơn hàng của tôi
+                </a>
+                <a href="{{ url_for('deposit') }}"
+                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600">
+                  <i class="fas fa-plus-circle w-4"></i> Nạp tiền (QR)
+                </a>
+                <hr class="my-1 border-gray-100">
+                <a href="{{ url_for('logout') }}"
+                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50">
+                  <i class="fas fa-sign-out-alt w-4"></i> Đăng xuất
+                </a>
+              </div>
+            </div>
+
+          {% else %}
+            <!-- Chưa đăng nhập -->
+            <a href="{{ url_for('login') }}"
+               class="text-white hover:text-indigo-200 text-xs sm:text-sm font-medium transition px-2 py-1">
+              Đăng nhập
+            </a>
+            <a href="{{ url_for('register') }}"
+               class="bg-white text-indigo-600 hover:bg-indigo-50 text-xs sm:text-sm font-semibold
+                      px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition shadow-sm">
+              Đăng ký
+            </a>
+          {% endif %}
+
+          <!-- Nút giỏ hàng -->
+          <button onclick="toggleCart()"
+                  class="relative text-white hover:text-indigo-200 transition cart-badge p-1"
+                  title="Giỏ hàng">
+            <i class="fas fa-shopping-cart text-xl"></i>
+            <span id="cart-count"
+                  class="absolute -top-1.5 -right-1.5 bg-yellow-400 text-gray-900
+                         text-[11px] font-extrabold rounded-full w-5 h-5 flex items-center
+                         justify-center hidden shadow">
+              0
+            </span>
+          </button>
+
+          <!-- Mobile Menu Hamburger Button -->
+          <button type="button" onclick="toggleMobileMenu()"
+                  class="lg:hidden text-white hover:text-indigo-200 p-1.5 rounded-lg hover:bg-white/10 transition">
+            <i class="fas fa-bars text-xl" id="mobile-menu-icon"></i>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Mobile Menu Dropdown -->
+      <div id="mobile-menu" class="hidden lg:hidden border-t border-indigo-500 py-3 space-y-1">
+        <a href="{{ url_for('index') }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-indigo-500">
+          <i class="fas fa-home w-5"></i> Trang chủ
+        </a>
+        <a href="{{ url_for('index') }}#products"
+           onclick="toggleMobileMenu()"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-indigo-500">
+          <i class="fas fa-box-open w-5"></i> Sản Phẩm
+        </a>
+        <a href="{{ url_for('index') }}#support"
+           onclick="toggleMobileMenu()"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-indigo-500">
+          <i class="fas fa-headset w-5"></i> Hỗ Trợ
+        </a>
+        <a href="{{ url_for('index') }}#contact"
+           onclick="toggleMobileMenu()"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white hover:bg-indigo-500">
+          <i class="fas fa-phone-alt w-5"></i> Liên Hệ
+        </a>
+        <a href="{{ url_for('deposit') }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-yellow-300 hover:bg-indigo-500">
+          <i class="fas fa-wallet w-5"></i> Nạp tiền tài khoản
+        </a>
+        {% if current_user and current_user.is_admin %}
+        <a href="{{ url_for('admin_dashboard') }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold text-amber-300 bg-amber-500/20 hover:bg-amber-500/30">
+          <i class="fas fa-shield-alt w-5"></i> Quản Trị Shop
+        </a>
+        {% endif %}
+        <!-- Mobile Search Form -->
+        <form action="{{ url_for('index') }}" method="GET" class="pt-2 px-1">
+          <div class="relative">
+            <input type="text" name="q"
+                   value="{{ query or '' }}"
+                   placeholder="Tìm sản phẩm..."
+                   class="w-full pl-3 pr-8 py-2 rounded-lg text-gray-900 text-sm focus:outline-none bg-white" />
+            <button type="submit" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
+              <i class="fas fa-search text-xs"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </nav>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FLASH MESSAGES (server-side)
+  ═══════════════════════════════════════════════════════════════ -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="max-w-7xl mx-auto px-4 pt-4 w-full space-y-2">
+        {% for category, message in messages %}
+          <div class="flex items-center gap-3 p-3.5 rounded-lg text-sm font-medium
+                      {% if category == 'success' %} bg-green-50 text-green-800 border border-green-200
+                      {% elif category == 'error' %} bg-red-50 text-red-800 border border-red-200
+                      {% elif category == 'warning' %} bg-yellow-50 text-yellow-800 border border-yellow-200
+                      {% else %} bg-blue-50 text-blue-800 border border-blue-200 {% endif %}">
+            <i class="fas
+              {% if category == 'success' %}fa-check-circle text-green-500
+              {% elif category == 'error' %}fa-times-circle text-red-500
+              {% elif category == 'warning' %}fa-exclamation-triangle text-yellow-500
+              {% else %}fa-info-circle text-blue-500{% endif %}"></i>
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       NỘI DUNG CHÍNH
+  ═══════════════════════════════════════════════════════════════ -->
+  <main class="flex-1">
+    {% block content %}{% endblock %}
+  </main>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       FOOTER
+  ═══════════════════════════════════════════════════════════════ -->
+  <footer class="bg-gray-900 text-gray-400 mt-16 border-t border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Cột 1: Giới thiệu ShopMinhGLN -->
+        <div class="md:col-span-1">
+          <h3 class="text-white font-extrabold text-xl mb-3 flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm">
+              <i class="fas fa-gamepad text-yellow-300"></i>
+            </div>
+            <span>Shop<span class="text-indigo-400">MinhGLN</span></span>
+          </h3>
+          <p class="text-sm leading-relaxed text-gray-400 mb-4">
+            Hệ thống mua bán tài khoản game, dịch vụ trực tuyến uy tín hàng đầu. Tự động hóa giao dịch 24/7, an toàn tuyệt đối.
+          </p>
+          <div class="flex items-center gap-3 text-lg text-gray-400">
+            <a href="{{ url_for('index') }}#contact" class="hover:text-indigo-400 transition" title="Facebook"><i class="fab fa-facebook"></i></a>
+            <a href="{{ url_for('index') }}#contact" class="hover:text-indigo-400 transition" title="Zalo"><i class="fas fa-comment-dots"></i></a>
+            <a href="{{ url_for('index') }}#contact" class="hover:text-indigo-400 transition" title="Telegram"><i class="fab fa-telegram"></i></a>
+            <a href="{{ url_for('index') }}#contact" class="hover:text-indigo-400 transition" title="YouTube"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+
+        <!-- Cột 2: Điều hướng nhanh -->
+        <div>
+          <h4 class="text-white font-bold mb-3 uppercase tracking-wider text-xs">Điều hướng</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="{{ url_for('index') }}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-angle-right text-xs text-indigo-400"></i> Trang chủ</a></li>
+            <li><a href="{{ url_for('index') }}#products" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-angle-right text-xs text-indigo-400"></i> Sản Phẩm</a></li>
+            <li><a href="{{ url_for('deposit') }}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-angle-right text-xs text-indigo-400"></i> Nạp tiền (QR VietQR)</a></li>
+            {% if current_user %}
+            <li><a href="{{ url_for('orders') }}" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-angle-right text-xs text-indigo-400"></i> Đơn hàng của tôi</a></li>
+            {% endif %}
+          </ul>
+        </div>
+
+        <!-- Cột 3: Hỗ trợ khách hàng -->
+        <div>
+          <h4 class="text-white font-bold mb-3 uppercase tracking-wider text-xs">Hỗ Trợ</h4>
+          <ul class="space-y-2 text-sm">
+            <li><a href="{{ url_for('index') }}#support" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-question-circle text-xs text-yellow-400"></i> Hướng dẫn mua hàng</a></li>
+            <li><a href="{{ url_for('index') }}#support" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-shield-alt text-xs text-yellow-400"></i> Chính sách bảo hành</a></li>
+            <li><a href="{{ url_for('index') }}#support" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-bolt text-xs text-yellow-400"></i> Nạp tiền tự động 24/7</a></li>
+            <li><a href="{{ url_for('index') }}#contact" class="hover:text-white transition flex items-center gap-2"><i class="fas fa-headset text-xs text-yellow-400"></i> Trung tâm trợ giúp</a></li>
+          </ul>
+        </div>
+
+        <!-- Cột 4: Liên hệ -->
+        <div>
+          <h4 class="text-white font-bold mb-3 uppercase tracking-wider text-xs">Liên Hệ</h4>
+          <ul class="space-y-2.5 text-sm">
+            <li class="flex items-start gap-2.5">
+              <i class="fas fa-phone-alt text-indigo-400 mt-1"></i>
+              <div>
+                <span class="block text-white font-semibold text-xs">Hotline / Zalo:</span>
+                <span>0888.880.804 (24/7)</span>
+              </div>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <i class="fas fa-envelope text-indigo-400 mt-1"></i>
+              <div>
+                <span class="block text-white font-semibold text-xs">Email CSKH:</span>
+                <span>support@shopminhgln.vn</span>
+              </div>
+            </li>
+            <li class="flex items-start gap-2.5">
+              <i class="fas fa-map-marker-alt text-indigo-400 mt-1"></i>
+              <div>
+                <span class="block text-white font-semibold text-xs">Địa chỉ:</span>
+                <span>Hà Nội, Việt Nam</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
+        <div>
+          © 2024 <strong class="text-gray-400">ShopMinhGLN</strong>. Tất cả quyền được bảo lưu.
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="{{ url_for('index') }}#support" class="hover:text-gray-300 transition">Điều khoản sử dụng</a>
+          <span>•</span>
+          <a href="{{ url_for('index') }}#support" class="hover:text-gray-300 transition">Chính sách bảo mật</a>
+          <span>•</span>
+          <a href="{{ url_for('index') }}#contact" class="hover:text-gray-300 transition">Hỗ trợ CSKH</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       PANEL GIỎ HÀNG (Slide-in từ phải)
+  ═══════════════════════════════════════════════════════════════ -->
+  <!-- Overlay -->
+  <div id="cart-overlay"
+       class="fixed inset-0 bg-black/50 z-40 hidden"
+       onclick="toggleCart()">
+  </div>
+
+  <!-- Panel -->
+  <div id="cart-panel"
+       class="fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-50
+              transform translate-x-full transition-transform duration-300 shadow-2xl
+              flex flex-col">
+
+    <!-- Header giỏ hàng -->
+    <div class="flex items-center justify-between p-4 border-b bg-indigo-600 text-white">
+      <h2 class="text-lg font-bold flex items-center gap-2">
+        <i class="fas fa-shopping-cart"></i> Giỏ hàng
+      </h2>
+      <button onclick="toggleCart()" class="hover:opacity-75 transition">
+        <i class="fas fa-times text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Danh sách sản phẩm trong giỏ -->
+    <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3">
+      <p id="cart-empty" class="text-center text-gray-400 mt-12">
+        <i class="fas fa-shopping-basket text-4xl mb-3 block"></i>
+        Giỏ hàng trống
+      </p>
+    </div>
+
+    <!-- Footer giỏ hàng: tổng tiền + nút thanh toán -->
+    <div class="border-t p-4 bg-gray-50">
+      <div class="flex justify-between items-center mb-3">
+        <span class="text-gray-600 font-medium">Tổng cộng:</span>
+        <span id="cart-total" class="text-xl font-bold text-indigo-600">0đ</span>
+      </div>
+      <button onclick="checkout()"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold
+                     py-3 rounded-xl transition flex items-center justify-center gap-2">
+        <i class="fas fa-credit-card"></i>
+        Thanh toán ngay
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TOAST NOTIFICATION (JS-driven)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="toast" class="hidden">
+    <div id="toast-inner"
+         class="flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium
+                bg-white border border-gray-200 text-gray-800 max-w-xs">
+      <i id="toast-icon" class="fas fa-check-circle text-green-500 text-lg"></i>
+      <span id="toast-msg"></span>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       JAVASCRIPT TOÀN CỤC: Giỏ hàng + Toast + Checkout
+  ═══════════════════════════════════════════════════════════════ -->
+  <script>
+  // ── Giỏ hàng lưu trong localStorage ─────────────────────────────────────
+  let cart = JSON.parse(localStorage.getItem('shopminhgln_cart') || localStorage.getItem('shopvn_cart') || '[]');
+
+  function saveCart() {
+    localStorage.setItem('shopminhgln_cart', JSON.stringify(cart));
+  }
+
+  /** Thêm sản phẩm vào giỏ hàng */
+  function addToCart(id, name, price, imageUrl) {
+    const existing = cart.find(i => i.id === id);
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push({ id, name, price, imageUrl, qty: 1 });
+    }
+    saveCart();
+    renderCart();
+    showToast(`✅ Đã thêm "${name}" vào giỏ!`, 'success');
+    // Mở giỏ hàng tạm thời để báo hiệu
+    if (!document.getElementById('cart-panel').classList.contains('translate-x-0')) {
+      toggleCart();
+      setTimeout(() => toggleCart(), 1800);
+    }
+  }
+
+  /** Thay đổi số lượng sản phẩm trong giỏ */
+  function changeQty(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) {
+      cart = cart.filter(i => i.id !== id);
+    }
+    saveCart();
+    renderCart();
+  }
+
+  /** Xóa sản phẩm khỏi giỏ */
+  function removeFromCart(id) {
+    cart = cart.filter(i => i.id !== id);
+    saveCart();
+    renderCart();
+  }
+
+  /** Render lại giao diện giỏ hàng */
+  function renderCart() {
+    const container = document.getElementById('cart-items');
+    const emptyMsg  = document.getElementById('cart-empty');
+    const countBadge = document.getElementById('cart-count');
+    const totalEl   = document.getElementById('cart-total');
+
+    // Tính tổng số lượng và tổng tiền
+    const totalQty   = cart.reduce((s, i) => s + i.qty, 0);
+    const totalPrice = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+    // Cập nhật badge số lượng trên navbar
+    if (totalQty > 0) {
+      countBadge.textContent = totalQty;
+      countBadge.classList.remove('hidden');
+    } else {
+      countBadge.classList.add('hidden');
+    }
+
+    totalEl.textContent = formatVND(totalPrice);
+
+    if (cart.length === 0) {
+      emptyMsg.classList.remove('hidden');
+      // Xóa các item cũ (ngoài emptyMsg)
+      Array.from(container.children).forEach(c => {
+        if (c.id !== 'cart-empty') c.remove();
+      });
+      return;
+    }
+
+    emptyMsg.classList.add('hidden');
+
+    // Rebuild danh sách items
+    const existingItems = container.querySelectorAll('.cart-item');
+    existingItems.forEach(e => e.remove());
+
+    cart.forEach(item => {
+      const el = document.createElement('div');
+      el.className = 'cart-item flex gap-3 bg-white rounded-xl p-3 border border-gray-100 shadow-sm';
+      el.innerHTML = `
+        <img src="${item.imageUrl}" alt="${item.name}"
+             class="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-gray-800 truncate">${item.name}</p>
+          <p class="text-indigo-600 font-bold text-sm mt-0.5">${formatVND(item.price)}</p>
+          <div class="flex items-center gap-2 mt-2">
+            <button onclick="changeQty(${item.id}, -1)"
+                    class="w-7 h-7 rounded-full bg-gray-100 hover:bg-red-100 text-gray-600
+                           hover:text-red-600 flex items-center justify-center text-sm transition">
+              <i class="fas fa-minus"></i>
+            </button>
+            <span class="font-bold text-gray-800 w-6 text-center">${item.qty}</span>
+            <button onclick="changeQty(${item.id}, +1)"
+                    class="w-7 h-7 rounded-full bg-gray-100 hover:bg-green-100 text-gray-600
+                           hover:text-green-600 flex items-center justify-center text-sm transition">
+              <i class="fas fa-plus"></i>
+            </button>
+            <button onclick="removeFromCart(${item.id})"
+                    class="ml-auto text-red-400 hover:text-red-600 transition text-sm">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </div>
+      `;
+      container.appendChild(el);
+    });
+  }
+
+  /** Mở/đóng panel giỏ hàng */
+  function toggleCart() {
+    const panel   = document.getElementById('cart-panel');
+    const overlay = document.getElementById('cart-overlay');
+    const isOpen  = panel.classList.contains('translate-x-0');
+    if (isOpen) {
+      panel.classList.remove('translate-x-0');
+      panel.classList.add('translate-x-full');
+      overlay.classList.add('hidden');
+    } else {
+      panel.classList.remove('translate-x-full');
+      panel.classList.add('translate-x-0');
+      overlay.classList.remove('hidden');
+    }
+  }
+
+  /** Thanh toán giỏ hàng */
+  async function checkout() {
+    if (cart.length === 0) {
+      showToast('Giỏ hàng đang trống!', 'error');
+      return;
+    }
+
+    // Kiểm tra đăng nhập (server sẽ redirect nếu chưa login)
+    const items = cart.map(i => ({ product_id: i.id, quantity: i.qty }));
+
+    try {
+      const res  = await fetch('/api/cart/checkout', {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ items }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Xóa giỏ hàng sau khi mua thành công
+        cart = [];
+        saveCart();
+        renderCart();
+        toggleCart();
+        showToast(data.message, 'success');
+
+        // Cập nhật số dư trên navbar ngay lập tức
+        updateNavbarBalance(data.new_balance_fmt);
+
+      } else if (res.status === 402) {
+        // Không đủ tiền → chuyển sang trang nạp tiền
+        showToast(data.message, 'error');
+        setTimeout(() => { window.location.href = data.deposit_url; }, 1800);
+
+      } else if (res.status === 401) {
+        // Chưa đăng nhập
+        showToast('Vui lòng đăng nhập để thanh toán!', 'warning');
+        setTimeout(() => { window.location.href = '/login'; }, 1500);
+
+      } else {
+        showToast(data.message || 'Có lỗi xảy ra!', 'error');
+      }
+
+    } catch (err) {
+      showToast('Lỗi kết nối server!', 'error');
+    }
+  }
+
+  // ── Toast Notification ────────────────────────────────────────────────────
+  let toastTimer = null;
+
+  function showToast(msg, type = 'success') {
+    const toast    = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+    const toastIcon = document.getElementById('toast-icon');
+    const inner    = document.getElementById('toast-inner');
+
+    toastMsg.textContent = msg;
+
+    // Đặt màu theo loại thông báo
+    const styles = {
+      success: { icon: 'fa-check-circle', color: 'text-green-500', border: 'border-green-200', bg: 'bg-green-50' },
+      error:   { icon: 'fa-times-circle',  color: 'text-red-500',   border: 'border-red-200',   bg: 'bg-red-50' },
+      warning: { icon: 'fa-exclamation-triangle', color: 'text-yellow-500', border: 'border-yellow-200', bg: 'bg-yellow-50' },
+      info:    { icon: 'fa-info-circle',   color: 'text-blue-500',  border: 'border-blue-200',  bg: 'bg-blue-50' },
+    };
+    const s = styles[type] || styles.info;
+
+    toastIcon.className = `fas ${s.icon} ${s.color} text-lg`;
+    inner.className = `flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm
+                       font-medium ${s.bg} ${s.border} border text-gray-800 max-w-xs`;
+
+    toast.classList.remove('hidden');
+    setTimeout(() => toast.classList.remove('hidden'), 10);
+
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.classList.add('hidden'); }, 3500);
+  }
+
+  // ── Cập nhật số dư trên Navbar ────────────────────────────────────────────
+  function updateNavbarBalance(balanceFmt) {
+    const el = document.getElementById('navbar-balance');
+    if (el) {
+      el.textContent = balanceFmt;
+      // Hiệu ứng nhấp nháy nhẹ
+      el.style.transition = 'color 0.3s';
+      el.style.color = '#fde68a';
+      setTimeout(() => { el.style.color = ''; }, 800);
+    }
+  }
+
+  // ── Format tiền VNĐ ───────────────────────────────────────────────────────
+  function formatVND(amount) {
+    return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + 'đ';
+  }
+
+  // ── Mobile Menu Toggle ───────────────────────────────────────────────────
+  function toggleMobileMenu() {
+    const menu = document.getElementById('mobile-menu');
+    const icon = document.getElementById('mobile-menu-icon');
+    if (!menu) return;
+    const isHidden = menu.classList.contains('hidden');
+    if (isHidden) {
+      menu.classList.remove('hidden');
+      if (icon) icon.className = 'fas fa-times text-xl';
+    } else {
+      menu.classList.add('hidden');
+      if (icon) icon.className = 'fas fa-bars text-xl';
+    }
+  }
+
+  // Khởi tạo giỏ hàng khi load trang
+  document.addEventListener('DOMContentLoaded', renderCart);
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
+

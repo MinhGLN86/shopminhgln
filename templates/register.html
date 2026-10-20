@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Đăng ký — ShopMinhGLN{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center px-4 py-12">
+  <div class="w-full max-w-md">
+
+    <!-- Card đăng ký -->
+    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+
+      <!-- Header -->
+      <div class="bg-gradient-to-br from-purple-600 to-indigo-600 p-8 text-center text-white">
+        <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-user-plus text-3xl"></i>
+        </div>
+        <h1 class="text-2xl font-extrabold">Tạo tài khoản</h1>
+        <p class="text-indigo-200 text-sm mt-1">Đăng ký để bắt đầu mua sắm ngay!</p>
+      </div>
+
+      <!-- Form -->
+      <div class="p-8">
+        <form method="POST" action="{{ url_for('register') }}" class="space-y-5" id="reg-form">
+
+          <!-- Tên đăng nhập -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+              <i class="fas fa-user mr-1 text-indigo-400"></i>Tên đăng nhập
+            </label>
+            <input type="text" name="username" required autofocus
+                   placeholder="Tối thiểu 3 ký tự..."
+                   minlength="3"
+                   class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm
+                          focus:outline-none focus:ring-2 focus:ring-indigo-500
+                          focus:border-transparent transition" />
+            <p class="text-xs text-gray-400 mt-1">Chỉ chứa chữ cái, chữ số và dấu gạch dưới</p>
+          </div>
+
+          <!-- Mật khẩu -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+              <i class="fas fa-lock mr-1 text-indigo-400"></i>Mật khẩu
+            </label>
+            <div class="relative">
+              <input type="password" name="password" id="pw1" required
+                     placeholder="Tối thiểu 6 ký tự..."
+                     minlength="6"
+                     class="w-full border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm
+                            focus:outline-none focus:ring-2 focus:ring-indigo-500
+                            focus:border-transparent transition" />
+              <button type="button" onclick="togglePw('pw1','eye1')"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400
+                             hover:text-indigo-600 transition">
+                <i class="fas fa-eye" id="eye1"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Xác nhận mật khẩu -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+              <i class="fas fa-lock mr-1 text-indigo-400"></i>Xác nhận mật khẩu
+            </label>
+            <div class="relative">
+              <input type="password" name="confirm_password" id="pw2" required
+                     placeholder="Nhập lại mật khẩu..."
+                     class="w-full border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm
+                            focus:outline-none focus:ring-2 focus:ring-indigo-500
+                            focus:border-transparent transition" />
+              <button type="button" onclick="togglePw('pw2','eye2')"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400
+                             hover:text-indigo-600 transition">
+                <i class="fas fa-eye" id="eye2"></i>
+              </button>
+            </div>
+            <p id="pw-mismatch" class="text-xs text-red-500 mt-1 hidden">
+              <i class="fas fa-times-circle"></i> Mật khẩu không khớp
+            </p>
+          </div>
+
+          <!-- Nút đăng ký -->
+          <button type="submit"
+                  class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98]
+                         text-white font-bold py-3.5 rounded-xl transition-all shadow-md
+                         flex items-center justify-center gap-2 text-sm mt-2">
+            <i class="fas fa-user-check"></i>
+            Tạo tài khoản
+          </button>
+        </form>
+
+        <!-- Divider -->
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-100"></div>
+          </div>
+          <div class="relative flex justify-center text-xs text-gray-400">
+            <span class="bg-white px-3">Đã có tài khoản?</span>
+          </div>
+        </div>
+
+        <a href="{{ url_for('login') }}"
+           class="block w-full text-center bg-gray-50 hover:bg-indigo-50 border border-gray-200
+                  hover:border-indigo-300 text-gray-700 hover:text-indigo-600 font-semibold
+                  py-3 rounded-xl transition text-sm">
+          <i class="fas fa-sign-in-alt mr-2"></i>Đăng nhập ngay
+        </a>
+      </div>
+    </div>
+
+    <p class="text-center mt-6">
+      <a href="{{ url_for('index') }}"
+         class="text-gray-500 hover:text-indigo-600 text-sm transition flex items-center justify-center gap-1.5">
+        <i class="fas fa-arrow-left"></i> Quay về trang chủ
+      </a>
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function togglePw(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon  = document.getElementById(iconId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    input.type = 'password';
+    icon.className = 'fas fa-eye';
+  }
+}
+
+// Kiểm tra mật khẩu khớp realtime
+const pw1 = document.getElementById('pw1');
+const pw2 = document.getElementById('pw2');
+const mismatchMsg = document.getElementById('pw-mismatch');
+
+pw2.addEventListener('input', () => {
+  if (pw2.value && pw1.value !== pw2.value) {
+    mismatchMsg.classList.remove('hidden');
+    pw2.classList.add('border-red-400');
+  } else {
+    mismatchMsg.classList.add('hidden');
+    pw2.classList.remove('border-red-400');
+  }
+});
+</script>
+{% endblock %}
+

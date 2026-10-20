@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.exe
+*.zip
+.vscode/
+.idea/
+cloudflared.exe
+ngrok.exe
+*.log

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Đơn hàng của tôi — ShopMinhGLN{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-10">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-extrabold text-gray-800 flex items-center gap-3">
+        <i class="fas fa-receipt text-indigo-500"></i>
+        Đơn hàng của tôi
+      </h1>
+      <p class="text-gray-500 mt-1">Xem lại lịch sử mua hàng của bạn</p>
+    </div>
+    <a href="{{ url_for('index') }}"
+       class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold
+              px-5 py-2.5 rounded-xl transition text-sm flex items-center gap-2">
+      <i class="fas fa-shopping-bag"></i> Tiếp tục mua sắm
+    </a>
+  </div>
+
+
+  {% if orders %}
+
+    <!-- Danh sách đơn hàng -->
+    <div class="space-y-5">
+      {% for order in orders %}
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden
+                  hover:shadow-md transition">
+
+        <!-- Header đơn hàng -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between
+                    px-6 py-4 bg-gray-50 border-b border-gray-100 gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+              <i class="fas fa-box text-indigo-600"></i>
+            </div>
+            <div>
+              <p class="font-bold text-gray-800">Đơn hàng #{{ order.id }}</p>
+              <p class="text-xs text-gray-500">
+                <i class="fas fa-clock mr-1"></i>
+                {{ order.created_at.strftime('%H:%M — %d/%m/%Y') }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <!-- Trạng thái -->
+            <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold
+                         {% if order.status == 'success' %}
+                           bg-green-100 text-green-700
+                         {% else %}
+                           bg-red-100 text-red-700
+                         {% endif %}">
+              <i class="fas {% if order.status == 'success' %}fa-check-circle{% else %}fa-times-circle{% endif %}"></i>
+              {% if order.status == 'success' %}Thành công{% else %}Đã hủy{% endif %}
+            </span>
+
+            <!-- Tổng tiền -->
+            <span class="font-extrabold text-indigo-600 text-lg">
+              {{ format_vnd(order.total_amount) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Danh sách sản phẩm trong đơn -->
+        <div class="px-6 py-4 space-y-3">
+          {% for item in order.items %}
+          <div class="flex items-center gap-4">
+            <!-- Ảnh sản phẩm -->
+            <div class="w-14 h-14 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+              <img src="{{ item.product.image_url }}"
+                   alt="{{ item.product.name }}"
+                   class="w-full h-full object-cover"
+                   onerror="this.src='https://via.placeholder.com/56'" />
+            </div>
+
+            <!-- Tên + giá -->
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-gray-800 text-sm truncate">{{ item.product.name }}</p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                {{ format_vnd(item.unit_price) }} × {{ item.quantity }}
+              </p>
+            </div>
+
+            <!-- Thành tiền -->
+            <span class="font-bold text-gray-700 text-sm whitespace-nowrap">
+              {{ format_vnd(item.unit_price * item.quantity) }}
+            </span>
+          </div>
+          {% endfor %}
+
+          <!-- Danh sách tài khoản game được bàn giao (nếu có) -->
+          {% if order.delivered_accounts %}
+          <div class="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                <i class="fas fa-key text-amber-600"></i>
+                Tài khoản đã nhận bàn giao ({{ order.delivered_accounts|length }} acc)
+              </span>
+              <span class="text-[11px] text-amber-700 font-medium">Vui lòng đổi mật khẩu sau khi nhận</span>
+            </div>
+            <div class="space-y-2">
+              {% for acc in order.delivered_accounts %}
+              <div class="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-lg border border-amber-200/80 shadow-sm gap-2">
+                <div class="font-mono text-sm text-gray-800 font-semibold break-all select-all flex items-center gap-2">
+                  <i class="fas fa-shield-alt text-amber-500 text-xs"></i>
+                  <span>{{ acc.account_info }}</span>
+                </div>
+                <button type="button"
+                        onclick="copyAccText('{{ acc.account_info|e }}', this)"
+                        class="px-3 py-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-900 font-semibold rounded-md transition flex items-center gap-1.5 flex-shrink-0">
+                  <i class="fas fa-copy"></i>
+                  <span>Sao chép</span>
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Tổng đơn hàng -->
+          <div class="border-t border-gray-100 pt-3 flex justify-end">
+            <p class="text-sm text-gray-500">
+              Tổng cộng:
+              <span class="font-extrabold text-indigo-600 text-base ml-2">
+                {{ format_vnd(order.total_amount) }}
+              </span>
+            </p>
+          </div>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <!-- Không có đơn hàng -->
+    <div class="text-center py-24 bg-white rounded-3xl border border-gray-100 shadow-sm">
+      <i class="fas fa-box-open text-7xl text-gray-200 mb-5 block"></i>
+      <h3 class="text-xl font-bold text-gray-500 mb-2">Chưa có đơn hàng nào</h3>
+      <p class="text-gray-400 mb-8">Bắt đầu mua sắm và đơn hàng sẽ xuất hiện ở đây.</p>
+      <a href="{{ url_for('index') }}"
+         class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700
+                text-white font-bold px-8 py-3.5 rounded-2xl transition shadow-md">
+        <i class="fas fa-shopping-cart"></i>
+        Khám phá sản phẩm ngay
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+
+<script>
+function copyAccText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check text-green-600"></i> <span class="text-green-700">Đã chép!</span>';
+    setTimeout(() => {
+      btn.innerHTML = origHTML;
+    }, 2000);
+  }).catch(err => {
+    prompt('Sao chép tài khoản:', text);
+  });
+}
+</script>
+{% endblock %}
+

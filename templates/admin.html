@@ -1,0 +1,824 @@
+{% extends "base.html" %}
+{% block title %}Trang Quản Trị — ShopMinhGLN{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <!-- Header Banner -->
+  <div class="bg-gradient-to-r from-gray-900 via-indigo-950 to-gray-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl mb-8 border border-indigo-900/40 relative overflow-hidden">
+    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-bold uppercase tracking-wider mb-2 border border-amber-500/30">
+          <i class="fas fa-shield-alt"></i> Control Panel
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
+          Hệ Thống Quản Trị ShopMinhGLN
+        </h1>
+        <p class="text-gray-300 text-sm mt-1">
+          Quản lý tài khoản game, sản phẩm, nạp tiền tự động và thành viên
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="{{ url_for('index') }}"
+           class="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-semibold transition flex items-center gap-2 border border-white/10">
+          <i class="fas fa-store"></i> Xem Cửa Hàng
+        </a>
+        <button onclick="openAddAccountModal()"
+                class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-gray-950 rounded-xl text-sm font-bold transition shadow-lg flex items-center gap-2">
+          <i class="fas fa-plus-circle"></i> Nạp Acc Nhanh
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thống Kê Nhanh (Stats Cards) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+    <!-- Doanh thu -->
+    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-xl flex-shrink-0">
+        <i class="fas fa-coins"></i>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Doanh Thu Bán Hàng</p>
+        <p class="text-xl font-extrabold text-gray-900 mt-0.5">{{ format_vnd(total_revenue) }}</p>
+        <span class="text-xs text-green-600 font-semibold">{{ total_orders }} đơn hoàn tất</span>
+      </div>
+    </div>
+
+    <!-- Kho Acc Game -->
+    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl flex-shrink-0">
+        <i class="fas fa-gamepad"></i>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Kho Acc Game</p>
+        <p class="text-xl font-extrabold text-gray-900 mt-0.5">{{ total_acc_available }} <span class="text-xs text-gray-400 font-normal">sẵn có</span></p>
+        <span class="text-xs text-blue-600 font-semibold">Đã bán: {{ total_acc_sold }} acc</span>
+      </div>
+    </div>
+
+    <!-- Sản phẩm -->
+    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl flex-shrink-0">
+        <i class="fas fa-boxes"></i>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Sản Phẩm Danh Mục</p>
+        <p class="text-xl font-extrabold text-gray-900 mt-0.5">{{ products|length }}</p>
+        <span class="text-xs text-indigo-600 font-semibold">Đang kinh doanh</span>
+      </div>
+    </div>
+
+    <!-- Thành viên -->
+    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+      <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl flex-shrink-0">
+        <i class="fas fa-users"></i>
+      </div>
+      <div>
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Tổng Thành Viên</p>
+        <p class="text-xl font-extrabold text-gray-900 mt-0.5">{{ total_users }}</p>
+        <span class="text-xs text-purple-600 font-semibold">Người dùng đăng ký</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="flex overflow-x-auto border-b border-gray-200 mb-6 gap-2 sm:gap-4 no-scrollbar">
+    <button onclick="switchTab('accounts')" id="tab-btn-accounts"
+            class="tab-btn active px-4 py-3 text-sm font-bold border-b-2 border-indigo-600 text-indigo-600 flex items-center gap-2 whitespace-nowrap">
+      <i class="fas fa-key"></i> Kho Acc Game ({{ all_accounts|length }})
+    </button>
+    <button onclick="switchTab('products')" id="tab-btn-products"
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-2 whitespace-nowrap">
+      <i class="fas fa-box-open"></i> Quản Lý Sản Phẩm ({{ products|length }})
+    </button>
+    <button onclick="switchTab('users')" id="tab-btn-users"
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-2 whitespace-nowrap">
+      <i class="fas fa-user-friends"></i> Thành Viên & Số Dư ({{ users|length }})
+    </button>
+    <button onclick="switchTab('orders')" id="tab-btn-orders"
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-2 whitespace-nowrap">
+      <i class="fas fa-shopping-bag"></i> Đơn Hàng Gần Đây
+    </button>
+    <button onclick="switchTab('transactions')" id="tab-btn-transactions"
+            class="tab-btn px-4 py-3 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-800 flex items-center gap-2 whitespace-nowrap">
+      <i class="fas fa-money-bill-wave"></i> Giao Dịch Nạp Tiền
+    </button>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAB 1: KHO ACC GAME (THÊM & QUẢN LÝ TÀI KHOẢN)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="tab-content-accounts" class="tab-pane block space-y-6">
+
+    <!-- Form nạp tài khoản hàng loạt -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+        <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+          <i class="fas fa-file-import text-lg"></i>
+        </div>
+        <div>
+          <h2 class="text-lg font-extrabold text-gray-900">Thêm Tài Khoản Game Hàng Loạt Vào Sản Phẩm</h2>
+          <p class="text-xs text-gray-500">Mỗi dòng là 1 tài khoản (ví dụ: tk|mk). Hệ thống sẽ tự động cập nhật số lượng tồn kho (Stock).</p>
+        </div>
+      </div>
+
+      <form action="{{ url_for('admin_account_add') }}" method="POST" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Chọn sản phẩm -->
+          <div class="md:col-span-1">
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Chọn Sản Phẩm Cần Nạp Acc *</label>
+            <select name="product_id" required
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium bg-white">
+              <option value="">-- Chọn sản phẩm --</option>
+              {% for p in products %}
+                <option value="{{ p.id }}">{{ p.name }} (Hiện có: {{ p.stock }} acc)</option>
+              {% endfor %}
+            </select>
+            <p class="text-[11px] text-gray-400 mt-1.5">
+              Acc nạp vào sẽ được tự động giao cho khách hàng khi họ thanh toán.
+            </p>
+          </div>
+
+          <!-- Danh sách acc -->
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Danh Sách Tài Khoản (Mỗi dòng 1 acc) *</label>
+            <textarea name="accounts_text" rows="4" required
+                      placeholder="vidu1@game.com|matkhau123&#10;vidu2@game.com|matkhau456&#10;taikhoan3|matkhau789|server1"
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-mono"></textarea>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+          <span class="text-xs text-gray-500 italic">
+            <i class="fas fa-info-circle text-indigo-500 mr-1"></i> Định dạng khuyên dùng: <code>tài_khoản|mật_khẩu</code> hoặc bất kỳ ghi chú nào.
+          </span>
+          <button type="submit"
+                  class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition shadow-md flex items-center gap-2">
+            <i class="fas fa-upload"></i> Nạp Acc Vào Kho
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Bảng danh sách tài khoản đã nạp -->
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="font-extrabold text-gray-800 text-base">Danh Sách Tài Khoản Trong Kho</h3>
+          <p class="text-xs text-gray-500">Xem, sao chép hoặc xóa các tài khoản chưa bán</p>
+        </div>
+
+        <!-- Bộ lọc trạng thái & tìm kiếm -->
+        <div class="flex items-center gap-2">
+          <select id="acc-filter-status" onchange="filterAccountsTable()"
+                  class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+            <option value="all">Tất cả trạng thái</option>
+            <option value="available">Chỉ còn hàng (Available)</option>
+            <option value="sold">Chỉ đã bán (Sold)</option>
+          </select>
+          <input type="text" id="acc-search-input" onkeyup="filterAccountsTable()"
+                 placeholder="Tìm theo nội dung/sản phẩm..."
+                 class="px-3 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm" id="accounts-table">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+              <th class="py-3 px-4">#ID</th>
+              <th class="py-3 px-4">Sản Phẩm</th>
+              <th class="py-3 px-4">Thông Tin Tài Khoản</th>
+              <th class="py-3 px-4">Trạng Thái</th>
+              <th class="py-3 px-4">Ngày Tạo / Đơn</th>
+              <th class="py-3 px-4 text-center">Hành Động</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 text-gray-700">
+            {% for acc in all_accounts %}
+            <tr class="hover:bg-gray-50/80 transition acc-row"
+                data-status="{{ acc.status }}"
+                data-search="{{ acc.product.name.lower() }} {{ acc.account_info.lower() }}">
+              <td class="py-3 px-4 font-mono text-xs text-gray-400">#{{ acc.id }}</td>
+              <td class="py-3 px-4 font-semibold text-gray-800">
+                {{ acc.product.name }}
+              </td>
+              <td class="py-3 px-4">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs bg-gray-100 px-2.5 py-1 rounded border border-gray-200 text-gray-800 select-all max-w-xs sm:max-w-md truncate"
+                        title="{{ acc.account_info }}">
+                    {{ acc.account_info }}
+                  </span>
+                  <button type="button"
+                          onclick="copyAccText('{{ acc.account_info|e }}', this)"
+                          class="p-1 text-gray-400 hover:text-indigo-600 text-xs"
+                          title="Sao chép">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </td>
+              <td class="py-3 px-4">
+                {% if acc.status == 'available' %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                    <i class="fas fa-check-circle text-[10px]"></i> Còn hàng
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-100 text-gray-600">
+                    <i class="fas fa-lock text-[10px]"></i> Đã bán
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-xs text-gray-500">
+                <div>{{ acc.created_at.strftime('%H:%M %d/%m/%Y') }}</div>
+                {% if acc.order_id %}
+                  <div class="text-indigo-600 font-semibold mt-0.5">Đơn #{{ acc.order_id }}</div>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-center">
+                {% if acc.status == 'available' %}
+                  <form action="{{ url_for('admin_account_delete', account_id=acc.id) }}" method="POST"
+                        onsubmit="return confirm('Bạn có chắc muốn xóa tài khoản này khỏi kho? Tồn kho của sản phẩm sẽ giảm đi 1.')">
+                    <button type="submit"
+                            class="px-2.5 py-1 text-xs text-red-600 hover:bg-red-50 rounded-md transition font-semibold">
+                      <i class="fas fa-trash-alt mr-1"></i> Xóa
+                    </button>
+                  </form>
+                {% else %}
+                  <span class="text-xs text-gray-400 italic">Đã giao</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-8 text-gray-400">
+                <i class="fas fa-box-open text-3xl mb-2 block"></i>
+                Chưa có tài khoản nào trong kho. Hãy dùng form phía trên để thêm acc!
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAB 2: QUẢN LÝ SẢN PHẨM
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="tab-content-products" class="tab-pane hidden space-y-6">
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
+        <div>
+          <h2 class="text-lg font-extrabold text-gray-900">Danh Mục Sản Phẩm</h2>
+          <p class="text-xs text-gray-500">Quản lý tên, giá bán và số lượng tồn kho tự động đồng bộ từ kho acc</p>
+        </div>
+        <button onclick="openAddProductModal()"
+                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition flex items-center gap-2 self-start sm:self-auto">
+          <i class="fas fa-plus"></i> Thêm Sản Phẩm Mới
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+              <th class="py-3 px-4">#ID</th>
+              <th class="py-3 px-4">Ảnh</th>
+              <th class="py-3 px-4">Tên Sản Phẩm</th>
+              <th class="py-3 px-4">Giá Bán</th>
+              <th class="py-3 px-4">Tồn Kho</th>
+              <th class="py-3 px-4">Mô Tả</th>
+              <th class="py-3 px-4 text-center">Thao Tác</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 text-gray-700">
+            {% for p in products %}
+            <tr class="hover:bg-gray-50 transition">
+              <td class="py-3 px-4 font-mono text-xs text-gray-400">#{{ p.id }}</td>
+              <td class="py-3 px-4">
+                <img src="{{ p.image_url }}" alt="{{ p.name }}"
+                     class="w-12 h-12 rounded-lg object-cover bg-gray-100 border border-gray-200"
+                     onerror="this.src='https://via.placeholder.com/48'" />
+              </td>
+              <td class="py-3 px-4 font-bold text-gray-900">{{ p.name }}</td>
+              <td class="py-3 px-4 font-extrabold text-indigo-600">{{ format_vnd(p.price) }}</td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold
+                             {% if p.stock > 0 %} bg-green-100 text-green-700 {% else %} bg-red-100 text-red-700 {% endif %}">
+                  {{ p.stock }} acc
+                </span>
+              </td>
+              <td class="py-3 px-4 text-xs text-gray-500 max-w-xs truncate" title="{{ p.description }}">
+                {{ p.description or '—' }}
+              </td>
+              <td class="py-3 px-4 text-center">
+                <div class="inline-flex items-center gap-1.5">
+                  <button type="button"
+                          onclick="quickDepositAcc({{ p.id }}, '{{ p.name|e }}')"
+                          class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-bold transition"
+                          title="Nạp acc vào sản phẩm này">
+                    <i class="fas fa-plus-circle mr-1"></i> Nạp Acc
+                  </button>
+                  <button type="button"
+                          onclick="openEditProductModal({{ p.id }}, '{{ p.name|e }}', {{ p.price }}, '{{ p.image_url|e }}', '{{ (p.description or '')|e }}')"
+                          class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition">
+                    <i class="fas fa-edit mr-1"></i> Sửa
+                  </button>
+                  <form action="{{ url_for('admin_product_delete', product_id=p.id) }}" method="POST"
+                        onsubmit="return confirm('CẢNH BÁO: Xóa sản phẩm này sẽ xóa toàn bộ acc game thuộc sản phẩm trong kho. Bạn chắc chắn chứ?')">
+                    <button type="submit"
+                            class="px-2.5 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition">
+                      <i class="fas fa-trash-alt mr-1"></i> Xóa
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-8 text-gray-400">Chưa có sản phẩm nào</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAB 3: THÀNH VIÊN & ĐIỀU CHỈNH SỐ DƯ
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="tab-content-users" class="tab-pane hidden space-y-6">
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="mb-6 pb-4 border-b border-gray-100">
+        <h2 class="text-lg font-extrabold text-gray-900">Danh Sách Thành Viên & Quản Lý Số Dư</h2>
+        <p class="text-xs text-gray-500">Xem danh sách người dùng và chủ động cộng / trừ số dư ví</p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+              <th class="py-3 px-4">#UID</th>
+              <th class="py-3 px-4">Tên Tài Khoản</th>
+              <th class="py-3 px-4">Số Dư Hiện Tại</th>
+              <th class="py-3 px-4">Vai Trò</th>
+              <th class="py-3 px-4">Ngày Tham Gia</th>
+              <th class="py-3 px-4 text-center">Thao Tác Số Dư</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 text-gray-700">
+            {% for u in users %}
+            <tr class="hover:bg-gray-50 transition">
+              <td class="py-3 px-4 font-mono text-xs text-gray-400">#{{ u.id }}</td>
+              <td class="py-3 px-4 font-bold text-gray-900 flex items-center gap-2">
+                <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                  {{ u.username[0].upper() }}
+                </div>
+                <span>{{ u.username }}</span>
+              </td>
+              <td class="py-3 px-4 font-extrabold text-indigo-600">{{ format_vnd(u.balance) }}</td>
+              <td class="py-3 px-4">
+                {% if u.is_admin %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                    <i class="fas fa-crown text-[10px]"></i> Admin
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    Thành viên
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-xs text-gray-500">
+                {{ u.created_at.strftime('%d/%m/%Y %H:%M') }}
+              </td>
+              <td class="py-3 px-4 text-center">
+                <button type="button"
+                        onclick="openAdjustBalanceModal({{ u.id }}, '{{ u.username|e }}', {{ u.balance }})"
+                        class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5">
+                  <i class="fas fa-wallet text-indigo-500"></i> Điều chỉnh số dư
+                </button>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-8 text-gray-400">Chưa có người dùng nào</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAB 4: ĐƠN HÀNG GẦN ĐÂY
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="tab-content-orders" class="tab-pane hidden space-y-6">
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="mb-6 pb-4 border-b border-gray-100">
+        <h2 class="text-lg font-extrabold text-gray-900">Lịch Sử Đơn Hàng Gần Nhất</h2>
+        <p class="text-xs text-gray-500">15 đơn hàng khách hàng vừa mua và nhận tài khoản</p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+              <th class="py-3 px-4">Mã Đơn</th>
+              <th class="py-3 px-4">Khách Hàng</th>
+              <th class="py-3 px-4">Sản Phẩm Đã Mua</th>
+              <th class="py-3 px-4">Tổng Tiền</th>
+              <th class="py-3 px-4">Trạng Thái</th>
+              <th class="py-3 px-4">Thời Gian</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 text-gray-700">
+            {% for o in recent_orders %}
+            <tr class="hover:bg-gray-50 transition">
+              <td class="py-3 px-4 font-mono font-bold text-indigo-600">#{{ o.id }}</td>
+              <td class="py-3 px-4 font-semibold text-gray-800">{{ o.user.username }}</td>
+              <td class="py-3 px-4">
+                {% for item in o.items %}
+                  <div class="text-xs">
+                    • <strong class="text-gray-900">{{ item.product.name }}</strong> (SL: {{ item.quantity }})
+                  </div>
+                {% endfor %}
+              </td>
+              <td class="py-3 px-4 font-extrabold text-gray-900">{{ format_vnd(o.total_amount) }}</td>
+              <td class="py-3 px-4">
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                  <i class="fas fa-check-circle text-[10px]"></i> Thành công
+                </span>
+              </td>
+              <td class="py-3 px-4 text-xs text-gray-500">
+                {{ o.created_at.strftime('%H:%M %d/%m/%Y') }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-8 text-gray-400">Chưa có đơn hàng nào</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TAB 5: GIAO DỊCH NẠP TIỀN TECHCOMBANK (WEBHOOK)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="tab-content-transactions" class="tab-pane hidden space-y-6">
+
+    <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+      <div class="mb-6 pb-4 border-b border-gray-100">
+        <h2 class="text-lg font-extrabold text-gray-900">Giao Dịch Nạp Tiền VietQR Techcombank</h2>
+        <p class="text-xs text-gray-500">15 giao dịch nạp tiền qua Webhook MacroDroid gần nhất</p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
+              <th class="py-3 px-4">Mã Nạp (Trans Code)</th>
+              <th class="py-3 px-4">Khách Hàng</th>
+              <th class="py-3 px-4">Số Tiền Nạp</th>
+              <th class="py-3 px-4">Trạng Thái</th>
+              <th class="py-3 px-4">Thời Gian Khởi Tạo</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 text-gray-700">
+            {% for t in recent_transactions %}
+            <tr class="hover:bg-gray-50 transition">
+              <td class="py-3 px-4 font-mono font-bold text-gray-800">{{ t.trans_code }}</td>
+              <td class="py-3 px-4 font-semibold text-gray-800">{{ t.user.username }}</td>
+              <td class="py-3 px-4 font-extrabold text-green-600">+{{ format_vnd(t.amount) }}</td>
+              <td class="py-3 px-4">
+                {% if t.status == 'success' %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                    <i class="fas fa-check-circle text-[10px]"></i> Đã cộng tiền
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">
+                    <i class="fas fa-hourglass-half text-[10px]"></i> Chờ chuyển khoản
+                  </span>
+                {% endif %}
+              </td>
+              <td class="py-3 px-4 text-xs text-gray-500">
+                {{ t.created_at.strftime('%H:%M %d/%m/%Y') }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-8 text-gray-400">Chưa có giao dịch nạp tiền nào</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL 1: THÊM SẢN PHẨM MỚI
+═══════════════════════════════════════════════════════════════ -->
+<div id="modal-add-product" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 hidden backdrop-blur-sm">
+  <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+    <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+      <h3 class="text-lg font-extrabold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-box-open text-indigo-600"></i> Thêm Sản Phẩm Mới
+      </h3>
+      <button onclick="closeModal('modal-add-product')" class="text-gray-400 hover:text-gray-600 p-1">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+
+    <form action="{{ url_for('admin_product_add') }}" method="POST" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tên Sản Phẩm *</label>
+        <input type="text" name="name" required placeholder="Ví dụ: Acc Valorant Rank Kim Cương Full Skin"
+               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Giá Bán (VNĐ) *</label>
+        <input type="number" name="price" required min="0" step="1000" placeholder="Ví dụ: 150000"
+               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Link Ảnh Sản Phẩm (URL)</label>
+        <input type="url" name="image_url" placeholder="https://images.unsplash.com/..."
+               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Mô Tả Sản Phẩm</label>
+        <textarea name="description" rows="3" placeholder="Thông tin chi tiết về sản phẩm..."
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        <button type="button" onclick="closeModal('modal-add-product')"
+                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition">
+          Hủy bỏ
+        </button>
+        <button type="submit"
+                class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition shadow-md">
+          Thêm Sản Phẩm
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL 2: SỬA SẢN PHẨM
+═══════════════════════════════════════════════════════════════ -->
+<div id="modal-edit-product" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 hidden backdrop-blur-sm">
+  <div class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl relative">
+    <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+      <h3 class="text-lg font-extrabold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-edit text-indigo-600"></i> Chỉnh Sửa Sản Phẩm
+      </h3>
+      <button onclick="closeModal('modal-edit-product')" class="text-gray-400 hover:text-gray-600 p-1">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+
+    <form id="form-edit-product" action="" method="POST" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Tên Sản Phẩm *</label>
+        <input type="text" id="edit-prod-name" name="name" required
+               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Giá Bán (VNĐ) *</label>
+        <input type="number" id="edit-prod-price" name="price" required min="0" step="1000"
+               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Link Ảnh Sản Phẩm (URL)</label>
+        <input type="url" id="edit-prod-image" name="image_url"
+               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Mô Tả Sản Phẩm</label>
+        <textarea id="edit-prod-desc" name="description" rows="3"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        <button type="button" onclick="closeModal('modal-edit-product')"
+                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition">
+          Hủy bỏ
+        </button>
+        <button type="submit"
+                class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition shadow-md">
+          Lưu Cập Nhật
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MODAL 3: ĐIỀU CHỈNH SỐ DƯ THÀNH VIÊN
+═══════════════════════════════════════════════════════════════ -->
+<div id="modal-adjust-balance" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 hidden backdrop-blur-sm">
+  <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+    <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+      <h3 class="text-lg font-extrabold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-wallet text-amber-500"></i> Điều Chỉnh Số Dư Thành Viên
+      </h3>
+      <button onclick="closeModal('modal-adjust-balance')" class="text-gray-400 hover:text-gray-600 p-1">
+        <i class="fas fa-times text-lg"></i>
+      </button>
+    </div>
+
+    <form action="{{ url_for('admin_user_adjust_balance') }}" method="POST" class="space-y-4">
+      <input type="hidden" id="adjust-user-id" name="user_id">
+
+      <div class="p-3 bg-gray-50 rounded-xl text-sm">
+        <span class="text-gray-500">Thành viên:</span>
+        <strong id="adjust-username" class="text-gray-900 ml-1"></strong>
+        <div class="mt-1">
+          <span class="text-gray-500">Số dư hiện tại:</span>
+          <span id="adjust-current-balance" class="font-extrabold text-indigo-600 ml-1"></span>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Thao Tác *</label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-green-50/50 has-[:checked]:border-green-500 has-[:checked]:bg-green-50">
+            <input type="radio" name="action" value="add" checked class="text-green-600">
+            <span class="text-xs font-bold text-green-700">+ Cộng Tiền</span>
+          </label>
+          <label class="flex items-center gap-2 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-red-50/50 has-[:checked]:border-red-500 has-[:checked]:bg-red-50">
+            <input type="radio" name="action" value="sub" class="text-red-600">
+            <span class="text-xs font-bold text-red-700">- Trừ Tiền</span>
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Số Tiền (VNĐ) *</label>
+        <input type="number" name="amount" required min="1000" step="1000" placeholder="Ví dụ: 50000"
+               class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+      </div>
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        <button type="button" onclick="closeModal('modal-adjust-balance')"
+                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-semibold transition">
+          Hủy bỏ
+        </button>
+        <button type="submit"
+                class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition shadow-md">
+          Xác Nhận Thay Đổi
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT CHO TRANG ADMIN
+═══════════════════════════════════════════════════════════════ -->
+<script>
+// Chuyển tab giao diện
+function switchTab(tabName) {
+  // Ẩn tất cả tab-pane
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('block'));
+
+  // Xóa class active của tất cả nút tab
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.remove('border-indigo-600', 'text-indigo-600');
+    btn.classList.add('border-transparent', 'text-gray-500');
+  });
+
+  // Kích hoạt tab đã chọn
+  const activePane = document.getElementById('tab-content-' + tabName);
+  if (activePane) {
+    activePane.classList.remove('hidden');
+    activePane.classList.add('block');
+  }
+
+  const activeBtn = document.getElementById('tab-btn-' + tabName);
+  if (activeBtn) {
+    activeBtn.classList.add('border-indigo-600', 'text-indigo-600');
+    activeBtn.classList.remove('border-transparent', 'text-gray-500');
+  }
+}
+
+// Mở modal Thêm Sản Phẩm
+function openAddProductModal() {
+  document.getElementById('modal-add-product').classList.remove('hidden');
+}
+
+// Mở modal Sửa Sản Phẩm
+function openEditProductModal(id, name, price, imageUrl, description) {
+  document.getElementById('form-edit-product').action = '/admin/products/edit/' + id;
+  document.getElementById('edit-prod-name').value = name;
+  document.getElementById('edit-prod-price').value = price;
+  document.getElementById('edit-prod-image').value = imageUrl;
+  document.getElementById('edit-prod-desc').value = description;
+  document.getElementById('modal-edit-product').classList.remove('hidden');
+}
+
+// Mở modal Nạp Acc nhanh (chuyển sang tab kho acc)
+function openAddAccountModal() {
+  switchTab('accounts');
+  window.scrollTo({ top: 300, behavior: 'smooth' });
+}
+
+// Nạp nhanh cho 1 sản phẩm cụ thể
+function quickDepositAcc(productId, productName) {
+  switchTab('accounts');
+  const selectElem = document.querySelector('select[name="product_id"]');
+  if (selectElem) {
+    selectElem.value = productId;
+  }
+  const textarea = document.querySelector('textarea[name="accounts_text"]');
+  if (textarea) {
+    textarea.focus();
+  }
+  window.scrollTo({ top: 250, behavior: 'smooth' });
+}
+
+// Mở modal Điều Chỉnh Số Dư Thành Viên
+function openAdjustBalanceModal(userId, username, currentBalance) {
+  document.getElementById('adjust-user-id').value = userId;
+  document.getElementById('adjust-username').innerText = username;
+  document.getElementById('adjust-current-balance').innerText = new Intl.NumberFormat('vi-VN').format(currentBalance) + 'đ';
+  document.getElementById('modal-adjust-balance').classList.remove('hidden');
+}
+
+// Đóng modal
+function closeModal(modalId) {
+  document.getElementById(modalId).classList.add('hidden');
+}
+
+// Copy Text
+function copyAccText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check text-green-600"></i>';
+    setTimeout(() => {
+      btn.innerHTML = origHTML;
+    }, 1500);
+  }).catch(err => {
+    prompt('Sao chép thông tin tài khoản:', text);
+  });
+}
+
+// Lọc bảng tài khoản kho acc
+function filterAccountsTable() {
+  const statusFilter = document.getElementById('acc-filter-status').value;
+  const searchFilter = (document.getElementById('acc-search-input').value || '').toLowerCase().trim();
+  const rows = document.querySelectorAll('.acc-row');
+
+  rows.forEach(row => {
+    const rowStatus = row.getAttribute('data-status');
+    const rowSearch = row.getAttribute('data-search') || '';
+
+    const matchStatus = (statusFilter === 'all') || (rowStatus === statusFilter);
+    const matchSearch = (!searchFilter) || (rowSearch.includes(searchFilter));
+
+    if (matchStatus && matchSearch) {
+      row.style.display = '';
+    } else {
+      row.style.display = 'none';
+    }
+  });
+}
+</script>
+{% endblock %}
+

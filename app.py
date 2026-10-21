@@ -74,6 +74,17 @@ def init_db_safely():
 with app.app_context():
     init_db_safely()
 
+@app.route('/api/system/status')
+def system_status():
+    """Kiểm tra trạng thái hệ thống và loại cơ sở dữ liệu đang hoạt động."""
+    uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    is_pg = uri.startswith('postgresql') and 'sqlite' not in uri
+    return jsonify({
+        'status': 'ok',
+        'database': 'Cloud PostgreSQL (Lưu trữ vĩnh viễn)' if is_pg else 'SQLite (Tạm thời)',
+        'is_permanent': is_pg
+    })
+
 @app.before_request
 def check_db_on_first_request():
     """Đảm bảo database đã sẵn sàng trước request đầu tiên nếu lúc khởi động DB chưa kịp kết nối."""

@@ -19,9 +19,17 @@ from database import seed_products
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'shopkey-change-in-production-2024')
 
-# Cấu hình SQLite — file shop.db nằm cạnh app.py
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(BASE_DIR, "shop.db")}'
+# Cấu hình Database: Hỗ trợ cả PostgreSQL (trên Cloud Render) và SQLite (khi chạy ở máy tính)
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # Render cấp URL postgres:// nhưng SQLAlchemy yêu cầu postgresql://
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(BASE_DIR, "shop.db")}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)

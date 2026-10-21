@@ -1,8 +1,9 @@
 import os
 
-# Gunicorn configuration
+# Gunicorn configuration cho Cloud Render
 port = os.environ.get('PORT', '5000')
 bind = f"0.0.0.0:{port}"
-workers = 2
-threads = 2
+workers = 1
+threads = 4
 timeout = 120
+preload_app = False

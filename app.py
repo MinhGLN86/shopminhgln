@@ -53,6 +53,13 @@ if not db_connected_to_postgres:
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Cấu hình Pool kết nối tự động tái sinh (ngăn lỗi SSL decryption failed / connection timeout)
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 280,
+    'pool_timeout': 20,
+}
+
 db.init_app(app)
 
 # Biến cờ kiểm tra khởi tạo DB

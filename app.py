@@ -19,25 +19,37 @@ from database import seed_products
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'shopkey-change-in-production-2024')
 
-# Cấu hình Database: Hỗ trợ cả PostgreSQL (trên Cloud Render) và SQLite (khi chạy ở máy tính)
+# Cấu hình Database: Hỗ trợ cả PostgreSQL (trên Cloud Render) và tự động fallback sang SQLite nếu lỗi
 raw_db_url = os.environ.get('DATABASE_URL', '').strip().strip('\'"')
+db_connected_to_postgres = False
+
 if raw_db_url:
-    # Render cấp URL postgres:// hoặc postgresql://
-    # Chỉ định rõ postgresql+psycopg2:// để dùng psycopg2 driver chuẩn xác
-    if raw_db_url.startswith('postgres://'):
-        raw_db_url = raw_db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
-    elif raw_db_url.startswith('postgresql://') and not raw_db_url.startswith('postgresql+'):
-        raw_db_url = raw_db_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+    # Chuẩn hóa URL cho SQLAlchemy
+    formatted_url = raw_db_url
+    if formatted_url.startswith('postgres://'):
+        formatted_url = formatted_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+    elif formatted_url.startswith('postgresql://') and not formatted_url.startswith('postgresql+'):
+        formatted_url = formatted_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
 
-    # Nếu dùng URL kết nối từ bên ngoài (render.com) thì bắt buộc cần sslmode=require
-    if 'render.com' in raw_db_url and 'sslmode=' not in raw_db_url:
-        sep = '&' if '?' in raw_db_url else '?'
-        raw_db_url += f"{sep}sslmode=require"
+    if 'render.com' in formatted_url and 'sslmode=' not in formatted_url:
+        sep = '&' if '?' in formatted_url else '?'
+        formatted_url += f"{sep}sslmode=require"
 
-    app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
-else:
+    # Thử kiểm tra kết nối tới PostgreSQL trước khi dùng
+    try:
+        from sqlalchemy import create_engine
+        test_engine = create_engine(formatted_url, connect_args={'connect_timeout': 4})
+        with test_engine.connect() as conn:
+            print("[DB] Ket noi thanh cong toi Cloud PostgreSQL!")
+        app.config['SQLALCHEMY_DATABASE_URI'] = formatted_url
+        db_connected_to_postgres = True
+    except Exception as e:
+        print(f"[DB FALLBACK WARNING] Khong the ket noi PostgreSQL ({e}). Tu dong chuyen sang SQLite du phong!")
+
+if not db_connected_to_postgres:
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(BASE_DIR, "shop.db")}'
+    print("[DB] Dang chay tren SQLite shop.db")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

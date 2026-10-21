@@ -20,12 +20,12 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'shopkey-change-in-production-2024')
 
 # Cấu hình Database: Hỗ trợ cả PostgreSQL (trên Cloud Render) và SQLite (khi chạy ở máy tính)
-database_url = os.environ.get('DATABASE_URL')
-if database_url:
+raw_db_url = os.environ.get('DATABASE_URL', '').strip().strip('\'"')
+if raw_db_url:
     # Render cấp URL postgres:// nhưng SQLAlchemy yêu cầu postgresql://
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    if raw_db_url.startswith('postgres://'):
+        raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
 else:
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(BASE_DIR, "shop.db")}'
@@ -34,10 +34,30 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# Tạo bảng và seed dữ liệu mẫu khi khởi động lần đầu
+# Biến cờ kiểm tra khởi tạo DB
+_db_initialized = False
+
+def init_db_safely():
+    """Khởi tạo database và seed dữ liệu an toàn, không làm crash app."""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            db.create_all()
+            seed_products()
+            _db_initialized = True
+            print("[DB] Khoi tao database va seed du lieu thanh cong!")
+        except Exception as e:
+            print(f"[DB INIT WARNING] Chua the ket noi database luc nay: {e}")
+
+# Thử khởi tạo lúc import
 with app.app_context():
-    db.create_all()
-    seed_products()
+    init_db_safely()
+
+@app.before_request
+def check_db_on_first_request():
+    """Đảm bảo database đã sẵn sàng trước request đầu tiên nếu lúc khởi động DB chưa kịp kết nối."""
+    if not _db_initialized:
+        init_db_safely()
 
 
 # ─────────────────────────────────────────────────────────────────────────────

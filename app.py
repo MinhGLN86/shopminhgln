@@ -74,17 +74,6 @@ def init_db_safely():
 with app.app_context():
     init_db_safely()
 
-@app.route('/api/system/status')
-def system_status():
-    """Kiểm tra trạng thái hệ thống và loại cơ sở dữ liệu đang hoạt động."""
-    uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
-    is_pg = uri.startswith('postgresql') and 'sqlite' not in uri
-    return jsonify({
-        'status': 'ok',
-        'database': 'Cloud PostgreSQL (Lưu trữ vĩnh viễn)' if is_pg else 'SQLite (Tạm thời)',
-        'is_permanent': is_pg
-    })
-
 @app.before_request
 def check_db_on_first_request():
     """Đảm bảo database đã sẵn sàng trước request đầu tiên nếu lúc khởi động DB chưa kịp kết nối."""
@@ -683,6 +672,7 @@ def admin_dashboard():
     total_users = User.query.count()
     total_acc_available = GameAccount.query.filter_by(status='available').count()
     total_acc_sold = GameAccount.query.filter_by(status='sold').count()
+    is_postgres = 'postgresql' in app.config.get('SQLALCHEMY_DATABASE_URI', '')
 
     return render_template('admin.html',
                            products=products,
@@ -694,7 +684,24 @@ def admin_dashboard():
                            total_orders=total_orders,
                            total_users=total_users,
                            total_acc_available=total_acc_available,
-                           total_acc_sold=total_acc_sold)
+                           total_acc_sold=total_acc_sold,
+                           is_postgres=is_postgres)
+
+
+@app.route('/api/system/status')
+def api_system_status():
+    """Kiểm tra tình trạng hệ thống và loại cơ sở dữ liệu đang hoạt động."""
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI', '')
+    is_postgres = 'postgresql' in db_uri
+    return jsonify({
+        'status': 'online',
+        'is_postgres': is_postgres,
+        'database_storage': 'PostgreSQL Cloud (Lưu trữ vĩnh viễn 100%)' if is_postgres else 'SQLite Dự Phòng (Tạm thời)',
+        'total_products': Product.query.count(),
+        'total_users': User.query.count(),
+        'total_accounts_available': GameAccount.query.filter_by(status='available').count(),
+        'total_accounts_sold': GameAccount.query.filter_by(status='sold').count()
+    })
 
 
 @app.route('/admin/products/add', methods=['POST'])

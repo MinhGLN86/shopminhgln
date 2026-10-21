@@ -9,8 +9,20 @@
     <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-bold uppercase tracking-wider mb-2 border border-amber-500/30">
-          <i class="fas fa-shield-alt"></i> Control Panel
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 text-amber-300 rounded-full text-xs font-bold uppercase tracking-wider border border-amber-500/30">
+            <i class="fas fa-shield-alt"></i> Control Panel
+          </span>
+          {% if is_postgres %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-xs font-bold border border-green-500/30 shadow-sm">
+            <i class="fas fa-check-circle text-green-400"></i> Cloud PostgreSQL (Lưu vĩnh viễn 100%)
+          </span>
+          {% else %}
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full text-xs font-bold border border-yellow-500/30"
+                title="Cần gắn External Database URL trên Render để dữ liệu không bị reset">
+            <i class="fas fa-exclamation-triangle text-yellow-400"></i> SQLite Dự Phòng (Chưa gắn Cloud DB)
+          </span>
+          {% endif %}
         </div>
         <h1 class="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
           Hệ Thống Quản Trị ShopMinhGLN

@@ -28,6 +28,12 @@ if raw_db_url:
         raw_db_url = raw_db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
     elif raw_db_url.startswith('postgresql://') and not raw_db_url.startswith('postgresql+'):
         raw_db_url = raw_db_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
+
+    # Nếu dùng URL kết nối từ bên ngoài (render.com) thì bắt buộc cần sslmode=require
+    if 'render.com' in raw_db_url and 'sslmode=' not in raw_db_url:
+        sep = '&' if '?' in raw_db_url else '?'
+        raw_db_url += f"{sep}sslmode=require"
+
     app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
 else:
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -41,7 +47,7 @@ db.init_app(app)
 _db_initialized = False
 
 def init_db_safely():
-    """Khởi tạo database và seed dữ liệu an toàn, không làm crash app."""
+    """Khởi tạo database và seed dữ liệu an toàn."""
     global _db_initialized
     if not _db_initialized:
         try:
@@ -61,6 +67,21 @@ def check_db_on_first_request():
     """Đảm bảo database đã sẵn sàng trước request đầu tiên nếu lúc khởi động DB chưa kịp kết nối."""
     if not _db_initialized:
         init_db_safely()
+
+@app.errorhandler(500)
+def handle_500_error(e):
+    """Bắt lỗi 500 và hiển thị chi tiết nguyên nhân trực tiếp để dễ dàng chẩn đoán."""
+    import traceback
+    tb = traceback.format_exc()
+    print(f"[500 ERROR]\n{tb}")
+    return f"""
+    <div style="font-family:sans-serif;padding:30px;max-width:900px;margin:30px auto;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.1);border-left:6px solid #ef4444;">
+      <h2 style="color:#ef4444;margin-top:0;">⚠️ Đang có lỗi kết nối Cơ sở dữ liệu (500 Internal Error)</h2>
+      <p style="color:#475569;font-size:14px;">Chi tiết lỗi bên dưới giúp xác định chính xác vấn đề:</p>
+      <pre style="background:#f8fafc;padding:16px;border-radius:8px;overflow-x:auto;font-size:12px;color:#334155;border:1px solid #e2e8f0;white-space:pre-wrap;">{tb}</pre>
+      <p style="margin-top:15px;"><a href="/" style="color:#6366f1;font-weight:bold;text-decoration:none;">🔄 Thử tải lại trang</a></p>
+    </div>
+    """, 500
 
 
 # ─────────────────────────────────────────────────────────────────────────────

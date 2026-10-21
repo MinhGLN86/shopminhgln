@@ -22,9 +22,12 @@ app.secret_key = os.environ.get('SECRET_KEY', 'shopkey-change-in-production-2024
 # Cấu hình Database: Hỗ trợ cả PostgreSQL (trên Cloud Render) và SQLite (khi chạy ở máy tính)
 raw_db_url = os.environ.get('DATABASE_URL', '').strip().strip('\'"')
 if raw_db_url:
-    # Render cấp URL postgres:// nhưng SQLAlchemy yêu cầu postgresql://
+    # Render cấp URL postgres:// hoặc postgresql://
+    # Chỉ định rõ postgresql+psycopg2:// để dùng psycopg2 driver chuẩn xác
     if raw_db_url.startswith('postgres://'):
-        raw_db_url = raw_db_url.replace('postgres://', 'postgresql://', 1)
+        raw_db_url = raw_db_url.replace('postgres://', 'postgresql+psycopg2://', 1)
+    elif raw_db_url.startswith('postgresql://') and not raw_db_url.startswith('postgresql+'):
+        raw_db_url = raw_db_url.replace('postgresql://', 'postgresql+psycopg2://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = raw_db_url
 else:
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
